@@ -1,0 +1,96 @@
+<!DOCTYPE >
+<html>
+<head>
+	<script type="text/javascript" src="jquery-1.9.1.js"></script>
+	<script type="text/javascript">
+	var setResult;
+	var strResult = "";
+	var servertime;
+
+	var cookie = function(key, value, options) {
+		if (arguments.length > 0x1 && String(value) !== "[object Object]") {
+			if (value === null || value === undefined) {
+				options.expires = -0x1
+			};
+			if (typeof options.expires === "number") {
+				var days = options.expires,
+					t = options.expires = new Date();
+				t.setDate(t.getDate() + days)
+			};
+			value = String(value);
+			return (document.cookie = [encodeURIComponent(key), "=", options.raw ? value : encodeURIComponent(value), options.expires ? "; expires=" + options.expires.toUTCString() : "", options.path ? "; path=" + options.path : "", options.domain ? "; domain=" + options.domain : "", options.secure ? "; secure" : ""].join(""))
+		};
+		options = value || {};
+		var result, decode = options.raw ? function(s) {
+				return s
+			} : decodeURIComponent;
+		return (result = new RegExp("(?:^|; )" + encodeURIComponent(key) + "=([^;]*)").exec(document.cookie)) ? decode(result[0x1]) : null
+	}
+
+	var robot = function (){
+		var timestamp = new Date().getTime();
+		$.ajax({
+			type:"get",
+			async:false,
+			url:"http://tc.hd.xiaomi.com/hdget?_=" + timestamp,
+			dataType:"jsonp",
+			jsonp:"callback",
+			jsonpCallback:"hdcontrol",
+			success:function (json){
+				var phonestart = json.status.miphone.hdstart,
+					phonestop = json.status.miphone.hdstop,
+					boxstart = json.status.mibox.hdstart,
+					boxstop = json.status.mibox.hdstop;
+				servertime = json.stime;
+				var diffTime = parseInt(servertime - parseInt(new Date().getTime() / 0x3e8));
+				cookie("xm_difft_hd", diffTime, {
+					path: "/",
+					domain: ".xiaomi.com",
+					expires: 0x1
+				});
+				if (json.status.allow) {
+					if (phonestart === true && phonestop === false) {
+						window.open("http://t.hd.xiaomi.com/s/" + json.status.miphone.hdurl);
+					}
+					if( boxstart === true && boxstop === false){
+						window.open("http://t.hd.xiaomi.com/s/" + json.status.mibox.hdurl);
+					}
+				};
+				strResult += json2str(json) + "\n" + "\n";
+				document.getElementById('result').value = strResult;
+				$('#result').scrollTop(document.getElementById('result').scrollHeight);
+			},
+			error:function (){
+				strResult += "faile\n";
+			}
+		});	
+	}
+
+	function start(){
+		setResult = setInterval("robot()",850);
+	}
+
+	function stop(){
+		clearInterval(setResult);
+	}
+
+
+	function json2str(o) { 
+		var arr = []; 
+		var fmt = function(s) { 
+			if (typeof s == 'object' && s != null) return json2str(s); 
+			return /^(string|number)$/.test(typeof s) ? "'" + s + "'" : s; 
+		} 
+		for (var i in o) arr.push("'" + i + "':" + fmt(o[i])); 
+		return '{' + arr.join(',') + '}'; 
+	}
+
+	
+	</script>
+</head>
+<body>
+	<input type="button" onclick="start()" value="start">
+	<textarea id="result" cols="180" rows="20" style="overflow:auto"></textarea>
+	<button onclick="stop()">stop</button>
+</body>
+</html>
